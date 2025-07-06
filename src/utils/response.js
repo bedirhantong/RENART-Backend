@@ -33,9 +33,21 @@ const error = (res, message = 'Internal Server Error', statusCode = 500, error =
     data: null
   };
 
+  // Add helpful hints for common errors
+  if (statusCode === 401) {
+    response.hint = 'Authentication required. Please login and include the token in Authorization header: Bearer <token>';
+  } else if (statusCode === 403) {
+    response.hint = 'Access forbidden. You may not have the required permissions for this resource.';
+  } else if (statusCode === 404) {
+    response.hint = 'Resource not found. Please check the URL and try again.';
+  } else if (statusCode === 422) {
+    response.hint = 'Invalid request data. Please check the request format and required fields.';
+  }
+
   // Include error details in development environment
   if (process.env.NODE_ENV === 'development' && error) {
     response.error = error;
+    response.timestamp = new Date().toISOString();
   }
 
   return res.status(statusCode).json(response);

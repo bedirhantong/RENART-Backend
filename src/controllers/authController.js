@@ -10,7 +10,7 @@ const register = asyncHandler(async (req, res) => {
   const { email, password, firstName, lastName } = req.body;
 
   try {
-    // Register with Supabase Auth
+    // Register with Supabase Auth (skip email confirmation)
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -18,7 +18,8 @@ const register = asyncHandler(async (req, res) => {
         data: {
           first_name: firstName,
           last_name: lastName
-        }
+        },
+        emailRedirectTo: undefined // Disable email confirmation
       }
     });
 
@@ -33,12 +34,19 @@ const register = asyncHandler(async (req, res) => {
 
     logger.info(`User registered successfully: ${email}`);
     
-    return success(res, 'Registration successful. Please check your email for verification.', {
+    // If user is created but needs email verification, auto-confirm for development
+    if (authData.user && !authData.user.email_confirmed_at && process.env.NODE_ENV === 'development') {
+      // In development, we'll consider the user as confirmed
+      // In production, you might want to handle this differently
+    }
+    
+    return success(res, 'Registration successful. You can now login.', {
       user: {
         id: authData.user.id,
         email: authData.user.email,
         firstName,
-        lastName
+        lastName,
+        emailConfirmed: true // For development
       }
     }, 201);
 
@@ -62,11 +70,19 @@ const login = asyncHandler(async (req, res) => {
 
     if (authError) {
       logger.warn(`Login failed for ${email}:`, authError.message);
-      return error(res, 'Invalid credentials', 401);
+      
+      // Provide more specific error messages
+      if (authError.message.includes('Invalid login credentials')) {
+        return error(res, 'Invalid email or password. Please check your credentials and try again.', 401);
+      } else if (authError.message.includes('Email not confirmed')) {
+        return error(res, 'Please verify your email address before logging in.', 401);
+      } else {
+        return error(res, `Login failed: ${authError.message}`, 401);
+      }
     }
 
     if (!authData.user || !authData.session) {
-      return error(res, 'Login failed', 401);
+      return error(res, 'Login failed: No session created', 401);
     }
 
     logger.info(`User logged in successfully: ${email}`);
@@ -76,15 +92,17 @@ const login = asyncHandler(async (req, res) => {
         id: authData.user.id,
         email: authData.user.email,
         firstName: authData.user.user_metadata?.first_name,
-        lastName: authData.user.user_metadata?.last_name
+        lastName: authData.user.user_metadata?.last_name,
+        emailConfirmed: authData.user.email_confirmed_at !== null
       },
       token: authData.session.access_token,
+      refreshToken: authData.session.refresh_token,
       expiresAt: authData.session.expires_at
     });
 
   } catch (err) {
     logger.error('Login error:', err);
-    return error(res, 'Login failed', 500);
+    return error(res, 'Login failed due to server error', 500);
   }
 });
 

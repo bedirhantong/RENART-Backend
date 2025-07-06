@@ -5,6 +5,7 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const publicProductsController = require('../controllers/publicProductsController');
 const favoritesController = require('../controllers/favoritesController');
+const testController = require('../controllers/testController');
 
 // Middleware
 const { authenticate, optionalAuth } = require('../middleware/auth');
@@ -36,5 +37,10 @@ router.get('/favorites', authenticate, favoritesController.getFavorites);
 router.post('/favorites', authenticate, validateBody(addFavoriteSchema), favoritesController.addFavorite);
 router.delete('/favorites/:id', authenticate, validateParams({ id: uuidSchema }), favoritesController.removeFavorite);
 router.get('/favorites/check/:productId', authenticate, validateParams({ productId: uuidSchema }), favoritesController.checkFavorite);
+
+// Test routes
+router.get('/test', testController.simpleTest);
+router.get('/test/auth', authenticate, testController.authTest);
+router.get('/test/cors', testController.corsTest);
 
 module.exports = router;

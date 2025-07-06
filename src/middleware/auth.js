@@ -12,14 +12,18 @@ const authenticate = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return error(res, 'Authentication required', 401);
+    if (!authHeader) {
+      return error(res, 'Authorization header missing. Please include Authorization header with Bearer token.', 401);
+    }
+    
+    if (!authHeader.startsWith('Bearer ')) {
+      return error(res, 'Invalid authorization format. Use: Authorization: Bearer <token>', 401);
     }
 
     const token = authHeader.split(' ')[1];
     
     if (!token) {
-      return error(res, 'Authentication token required', 401);
+      return error(res, 'Authentication token missing. Please provide a valid JWT token.', 401);
     }
 
     // Verify the JWT token with Supabase
@@ -27,7 +31,14 @@ const authenticate = async (req, res, next) => {
     
     if (authError || !user) {
       logger.warn('Authentication failed:', authError?.message || 'Invalid token');
-      return error(res, 'Invalid or expired token', 401);
+      
+      if (authError?.message?.includes('expired')) {
+        return error(res, 'Token has expired. Please login again.', 401);
+      } else if (authError?.message?.includes('invalid')) {
+        return error(res, 'Invalid token format. Please login again.', 401);
+      } else {
+        return error(res, 'Authentication failed. Please login again.', 401);
+      }
     }
 
     // Add user to request object
@@ -62,7 +73,7 @@ const authenticateVendor = async (req, res, next) => {
 
       if (vendorError || !vendor) {
         logger.warn(`Vendor access denied for user: ${req.user.email}`);
-        return error(res, 'Vendor access required', 403);
+        return error(res, 'Vendor access required. This endpoint is only available for registered vendors.', 403);
       }
 
       // Add vendor info to request

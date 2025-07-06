@@ -27,7 +27,10 @@ const errorHandler = (err, req, res, next) => {
   };
 
   // Handle specific error types
-  if (err.name === 'ValidationError') {
+  if (err.message && err.message.includes('CORS')) {
+    statusCode = 403;
+    message = 'CORS Error: Cross-origin request blocked. Make sure your frontend is running on an allowed origin.';
+  } else if (err.name === 'ValidationError') {
     statusCode = 400;
     message = 'Validation Error';
     errorResponse.errors = err.errors;
@@ -39,10 +42,13 @@ const errorHandler = (err, req, res, next) => {
     message = 'Duplicate entry';
   } else if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
-    message = 'Invalid token';
+    message = 'Invalid authentication token';
   } else if (err.name === 'TokenExpiredError') {
     statusCode = 401;
-    message = 'Token expired';
+    message = 'Authentication token has expired';
+  } else if (err.code === 'ECONNREFUSED') {
+    statusCode = 503;
+    message = 'Database connection failed';
   } else if (err.statusCode) {
     statusCode = err.statusCode;
     message = err.message;
