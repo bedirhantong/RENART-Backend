@@ -46,12 +46,27 @@ const getFavorites = asyncHandler(async (req, res) => {
         product.weight
       );
 
+      // Group images by color
+      const imagesByColor = product.product_images ? product.product_images.reduce((acc, img) => {
+        if (!acc[img.color]) {
+          acc[img.color] = [];
+        }
+        acc[img.color].push(img.image_url);
+        return acc;
+      }, {}) : {};
+      
+      const images = product.product_images ? product.product_images.map(img => img.image_url) : [];
+
       return {
         id: favorite.id,
         createdAt: favorite.created_at,
+        productId: product.id,
         product: {
           ...product,
-          calculatedPrice
+          calculatedPrice,
+          images,
+          imagesByColor,
+          availableColors: Object.keys(imagesByColor)
         }
       };
     });
@@ -113,7 +128,13 @@ const addFavorite = asyncHandler(async (req, res) => {
 
     if (insertError) {
       logger.error('Add favorite error:', insertError);
-      return error(res, 'Failed to add to favorites', 500);
+      
+      // Handle foreign key constraint errors
+      if (insertError.message.includes('foreign key constraint')) {
+        return error(res, 'Database configuration error. Please contact support.', 500);
+      }
+      
+      return error(res, `Failed to add to favorites: ${insertError.message}`, 500);
     }
 
     logger.info(`User ${userId} added product ${productId} to favorites`);

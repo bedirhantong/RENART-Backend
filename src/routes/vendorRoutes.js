@@ -6,7 +6,7 @@ const vendorProductsController = require('../controllers/vendorProductsControlle
 const vendorStoreController = require('../controllers/vendorStoreController');
 
 // Middleware
-const { authenticateVendor } = require('../middleware/auth');
+const { authenticateVendor } = require('../middleware/vendorAuthMiddleware');
 const { validateBody, validateQuery, validateParams } = require('../middleware/validate');
 const { vendorLimiter } = require('../middleware/rateLimiter');
 

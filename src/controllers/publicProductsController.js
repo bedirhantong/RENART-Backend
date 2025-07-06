@@ -26,19 +26,7 @@ const getProducts = asyncHandler(async (req, res) => {
 
     let query = supabase
       .from('products')
-      .select(`
-        *,
-        vendors (
-          id,
-          name,
-          logo_url
-        ),
-        product_images (
-          id,
-          color,
-          image_url
-        )
-      `)
+      .select('*')
       .eq('is_active', true);
 
     // Apply search filter
@@ -120,16 +108,41 @@ const getProducts = asyncHandler(async (req, res) => {
       return error(res, 'Failed to retrieve products', 500);
     }
 
-    // Calculate dynamic prices for each product
+    // Fetch images for each product
+    const productIds = products.map(p => p.id);
+    const { data: allImages } = await supabase
+      .from('product_images')
+      .select('*')
+      .in('product_id', productIds);
+
+    // Calculate dynamic prices for each product and add images
     const productsWithPrices = products.map(product => {
       const calculatedPrice = goldPriceService.calculateProductPrice(
         product.popularity_score,
         product.weight
       );
 
+      // Find images for this product
+      const productImages = allImages ? allImages.filter(img => img.product_id === product.id) : [];
+      
+      // Group images by color
+      const imagesByColor = productImages.reduce((acc, img) => {
+        if (!acc[img.color]) {
+          acc[img.color] = [];
+        }
+        acc[img.color].push(img.image_url);
+        return acc;
+      }, {});
+      
+      // Legacy images array (first image of each color)
+      const images = productImages.map(img => img.image_url);
+
       return {
         ...product,
-        calculatedPrice
+        calculatedPrice,
+        images,
+        imagesByColor,
+        availableColors: Object.keys(imagesByColor)
       };
     });
 
@@ -190,20 +203,7 @@ const getProductById = asyncHandler(async (req, res) => {
 
     const { data: product, error: queryError } = await supabase
       .from('products')
-      .select(`
-        *,
-        vendors (
-          id,
-          name,
-          description,
-          logo_url
-        ),
-        product_images (
-          id,
-          color,
-          image_url
-        )
-      `)
+      .select('*')
       .eq('id', id)
       .eq('is_active', true)
       .single();
@@ -213,15 +213,35 @@ const getProductById = asyncHandler(async (req, res) => {
       return error(res, 'Product not found', 404);
     }
 
+    // Fetch images for this product
+    const { data: productImages } = await supabase
+      .from('product_images')
+      .select('*')
+      .eq('product_id', product.id);
+
     // Calculate dynamic price
     const calculatedPrice = goldPriceService.calculateProductPrice(
       product.popularity_score,
       product.weight
     );
 
+    // Group images by color
+    const imagesByColor = productImages ? productImages.reduce((acc, img) => {
+      if (!acc[img.color]) {
+        acc[img.color] = [];
+      }
+      acc[img.color].push(img.image_url);
+      return acc;
+    }, {}) : {};
+    
+    const images = productImages ? productImages.map(img => img.image_url) : [];
+
     const productWithPrice = {
       ...product,
-      calculatedPrice
+      calculatedPrice,
+      images,
+      imagesByColor,
+      availableColors: Object.keys(imagesByColor)
     };
 
     return success(res, 'Product retrieved successfully', {

@@ -42,6 +42,25 @@ const updateVendorSchema = z.object({
   logoUrl: z.string().url('Invalid logo URL').optional().nullable()
 });
 
+// Vendor auth schemas
+const vendorRegisterSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  businessName: z.string().min(1, 'Business name is required'),
+  businessType: z.string().min(1, 'Business type is required'),
+  contactName: z.string().min(1, 'Contact name is required'),
+  contactPhone: z.string().min(1, 'Contact phone is required'),
+  businessAddress: z.string().min(1, 'Business address is required'),
+  taxId: z.string().optional(),
+  description: z.string().optional(),
+  website: z.string().url('Invalid URL').optional().or(z.literal(''))
+});
+
+const vendorLoginSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(6, 'Password must be at least 6 characters')
+});
+
 // Query schemas
 const productQuerySchema = z.object({
   page: z.string().regex(/^\d+$/).transform(Number).optional().default('1'),
@@ -73,6 +92,8 @@ module.exports = {
   createProductSchema,
   updateProductSchema,
   updateVendorSchema,
+  vendorRegisterSchema,
+  vendorLoginSchema,
   productQuerySchema,
   addFavoriteSchema,
   uuidSchema

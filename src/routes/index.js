@@ -4,11 +4,13 @@ const router = express.Router();
 // Import route modules
 const publicRoutes = require('./publicRoutes');
 const vendorRoutes = require('./vendorRoutes');
+const vendorAuthRoutes = require('./vendorAuthRoutes');
 const healthRoutes = require('./healthRoutes');
 
 // API v1 routes
 router.use('/api/v1/public', publicRoutes);
 router.use('/api/v1/vendor', vendorRoutes);
+router.use('/api/v1/vendor-auth', vendorAuthRoutes);
 
 // Health and system routes (no versioning)
 router.use('/api', healthRoutes);
