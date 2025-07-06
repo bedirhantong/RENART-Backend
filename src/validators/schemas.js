@@ -13,6 +13,11 @@ const registerSchema = z.object({
   lastName: z.string().min(1, 'Last name is required')
 });
 
+const updateProfileSchema = z.object({
+  firstName: z.string().min(1, 'First name is required').optional(),
+  lastName: z.string().min(1, 'Last name is required').optional()
+});
+
 // Product schemas
 const createProductSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
@@ -64,6 +69,7 @@ const uuidSchema = z.string().uuid('Invalid ID format');
 module.exports = {
   loginSchema,
   registerSchema,
+  updateProfileSchema,
   createProductSchema,
   updateProductSchema,
   updateVendorSchema,

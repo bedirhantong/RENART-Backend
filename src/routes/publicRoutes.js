@@ -3,6 +3,7 @@ const router = express.Router();
 
 // Controllers
 const authController = require('../controllers/authController');
+const userController = require('../controllers/userController');
 const publicProductsController = require('../controllers/publicProductsController');
 const favoritesController = require('../controllers/favoritesController');
 const testController = require('../controllers/testController');
@@ -16,6 +17,7 @@ const { authLimiter } = require('../middleware/rateLimiter');
 const {
   loginSchema,
   registerSchema,
+  updateProfileSchema,
   productQuerySchema,
   addFavoriteSchema,
   uuidSchema
@@ -25,8 +27,13 @@ const {
 router.post('/auth/register', authLimiter, validateBody(registerSchema), authController.register);
 router.post('/auth/login', authLimiter, validateBody(loginSchema), authController.login);
 router.post('/auth/logout', authenticate, authController.logout);
-router.get('/auth/profile', authenticate, authController.getProfile);
 router.post('/auth/refresh', authController.refreshToken);
+
+// User routes
+router.get('/user/profile', authenticate, userController.getProfile);
+router.put('/user/profile', authenticate, validateBody(updateProfileSchema), userController.updateProfile);
+router.get('/vendors/:vendorId/profile', validateParams({ vendorId: uuidSchema }), userController.getVendorProfile);
+router.get('/vendors/:vendorId/products', validateParams({ vendorId: uuidSchema }), validateQuery(productQuerySchema), userController.getVendorProducts);
 
 // Public product routes
 router.get('/products', validateQuery(productQuerySchema), publicProductsController.getProducts);

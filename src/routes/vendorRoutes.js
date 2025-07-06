@@ -23,9 +23,9 @@ const {
 router.use(authenticateVendor);
 router.use(vendorLimiter);
 
-// Store management routes
-router.get('/store', vendorStoreController.getStoreInfo);
-router.put('/store', validateBody(updateVendorSchema), vendorStoreController.updateStoreInfo);
+// Vendor profile routes
+router.get('/profile', vendorStoreController.getStoreInfo);
+router.put('/profile', validateBody(updateVendorSchema), vendorStoreController.updateStoreInfo);
 router.get('/dashboard', vendorStoreController.getDashboardStats);
 
 // Product management routes
