@@ -14,7 +14,14 @@ const { generalLimiter } = require('./middleware/rateLimiter');
 const routes = require('./routes');
 
 // Import services (this will start the gold price service)
-require('./services/goldPriceService');
+// Wrap in try-catch to prevent startup failures
+try {
+  require('./services/goldPriceService');
+  logger.info('Gold price service initialized successfully');
+} catch (error) {
+  logger.error('Failed to initialize gold price service:', error.message);
+  logger.warn('Continuing without gold price service...');
+}
 
 // Import Swagger configuration
 const { specs, swaggerUi } = require('./config/swagger');

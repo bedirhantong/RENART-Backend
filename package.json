@@ -4,6 +4,7 @@
   "description": "RENART Jewelry Store Backend API",
   "main": "src/server.js",
   "scripts": {
+    "build": "echo 'Build completed'",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest",
