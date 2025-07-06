@@ -16,6 +16,9 @@ const routes = require('./routes');
 // Import services (this will start the gold price service)
 require('./services/goldPriceService');
 
+// Import Swagger configuration
+const { specs, swaggerUi } = require('./config/swagger');
+
 // Create Express app
 const app = express();
 
@@ -102,6 +105,9 @@ app.get('/', (req, res) => {
     }
   });
 });
+
+// Swagger documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // 404 handler
 app.use(notFoundHandler);
