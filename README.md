@@ -39,12 +39,16 @@ Professional Node.js + Supabase backend for RENART Jewelry Store.
    ```
 
 3. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   ```
-   Update the `.env` file with your Supabase credentials.
+   Update the `.env` file with your Supabase credentials (already configured).
 
-4. Start the development server:
+4. Set up the database:
+   - Go to your Supabase project dashboard
+   - Open the SQL Editor
+   - Run the script in `database/migrations.sql`
+   - Run the script in `database/sample_data.sql` (optional, for sample data)
+   - Update the vendor email in both scripts to match your account
+
+5. Start the development server:
    ```bash
    npm run dev
    ```
