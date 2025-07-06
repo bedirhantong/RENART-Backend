@@ -1,4 +1,4 @@
-const supabase = require('../config/supabase');
+const { supabase } = require('../config/supabase');
 const goldPriceService = require('../services/goldPriceService');
 const { success, error } = require('../utils/response');
 const { asyncHandler } = require('../middleware/errorHandler');

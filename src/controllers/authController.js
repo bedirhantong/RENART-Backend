@@ -1,4 +1,4 @@
-const supabase = require('../config/supabase');
+const { supabase, supabaseAdmin } = require('../config/supabase');
 const { success, error } = require('../utils/response');
 const { asyncHandler } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
@@ -18,13 +18,26 @@ const register = asyncHandler(async (req, res) => {
         data: {
           first_name: firstName,
           last_name: lastName
-        }
+        },
+        emailRedirectTo: undefined // Explicitly disable email confirmation redirect
       }
     });
 
     if (authError) {
       logger.error('Registration error:', authError);
-      return error(res, authError.message, 400);
+      
+      // Handle specific Supabase registration errors
+      if (authError.message.includes('User already registered')) {
+        return error(res, 'An account with this email already exists. Please try logging in instead.', 409);
+      } else if (authError.message.includes('Invalid email')) {
+        return error(res, 'Please provide a valid email address.', 400);
+      } else if (authError.message.includes('Password should be at least')) {
+        return error(res, 'Password must be at least 6 characters long.', 400);
+      } else if (authError.message.includes('Signup is disabled')) {
+        return error(res, 'User registration is currently disabled. Please contact support.', 503);
+      } else {
+        return error(res, `Registration failed: ${authError.message}`, 400);
+      }
     }
 
     if (!authData.user) {
@@ -32,6 +45,27 @@ const register = asyncHandler(async (req, res) => {
     }
 
     logger.info(`User registered successfully: ${email}`);
+    
+    // Auto-confirm user if email confirmation is enabled but we don't want it
+    if (authData.user && !authData.user.email_confirmed_at && supabaseAdmin) {
+      try {
+        logger.info(`Auto-confirming user: ${email}`);
+        const { error: confirmError } = await supabaseAdmin.auth.admin.updateUserById(
+          authData.user.id,
+          {
+            email_confirmed_at: new Date().toISOString()
+          }
+        );
+        
+        if (confirmError) {
+          logger.warn('Failed to auto-confirm user:', confirmError);
+        } else {
+          logger.info(`User auto-confirmed: ${email}`);
+        }
+      } catch (confirmErr) {
+        logger.warn('Error during auto-confirmation:', confirmErr);
+      }
+    }
     
     return success(res, 'Registration successful. You can now login.', {
       user: {
@@ -66,6 +100,13 @@ const login = asyncHandler(async (req, res) => {
       // Provide more specific error messages
       if (authError.message.includes('Invalid login credentials')) {
         return error(res, 'Invalid email or password. Please check your credentials and try again.', 401);
+      } else if (authError.message.includes('Email not confirmed')) {
+        // If email confirmation is required but we don't want it, provide a helpful message
+        return error(res, 'Account created but requires email confirmation. Since email confirmation is disabled in development, please contact support or try again in a few moments.', 401);
+      } else if (authError.message.includes('Account not found')) {
+        return error(res, 'No account found with this email address. Please register first.', 404);
+      } else if (authError.message.includes('Too many requests')) {
+        return error(res, 'Too many login attempts. Please wait a moment before trying again.', 429);
       } else {
         return error(res, `Login failed: ${authError.message}`, 401);
       }

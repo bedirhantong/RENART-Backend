@@ -2,19 +2,28 @@ const { createClient } = require('@supabase/supabase-js');
 const logger = require('../utils/logger');
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
+if (!supabaseUrl || !supabaseKey) {
   logger.error('Missing Supabase configuration');
-  throw new Error('Missing Supabase URL or ANON KEY');
+  process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: false,
-    detectSessionInUrl: false
-  }
-});
+// Regular client for user operations
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-module.exports = supabase;
+// Admin client for administrative operations
+const supabaseAdmin = supabaseServiceKey 
+  ? createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : null;
+
+module.exports = {
+  supabase,
+  supabaseAdmin
+};
