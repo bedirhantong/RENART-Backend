@@ -141,11 +141,19 @@ app.use(errorHandler);
 // Server startup
 const PORT = process.env.PORT || 3000;
 
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   logger.info(`🚀 RENART Backend Server running on port ${PORT}`);
   logger.info(`📝 Environment: ${process.env.NODE_ENV || 'development'}`);
   logger.info(`🔗 API Documentation: http://localhost:${PORT}/api-docs`);
   logger.info(`❤️  Health Check: http://localhost:${PORT}/api/health`);
+  
+  // Log all environment variables for debugging
+  logger.info('Environment variables loaded:', {
+    NODE_ENV: process.env.NODE_ENV,
+    PORT: process.env.PORT,
+    SUPABASE_URL: process.env.SUPABASE_URL ? 'Set' : 'Not Set',
+    JWT_SECRET: process.env.JWT_SECRET ? 'Set' : 'Not Set'
+  });
 });
 
 // Graceful shutdown
