@@ -129,6 +129,15 @@ app.get('/', (req, res) => {
   });
 });
 
+// Simple health endpoint for Railway
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 // Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
